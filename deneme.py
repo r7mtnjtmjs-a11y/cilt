@@ -1,74 +1,94 @@
 import streamlit as st
 import google.generativeai as genai
 from PIL import Image
-import pytesseract
 
 st.set_page_config(page_title="Bella Skin AI", page_icon="🌿", layout="centered")
 
 st.markdown("""
     <style>
     .stApp {
-        background-color: #F9F7F2 !important;
+        background-color: #F5F5DC;
     }
-    
-    h1 {
-        color: #5D6D7E !important;
-        font-family: 'Helvetica Neue', sans-serif;
-        font-weight: 300 !important;
-        text-align: center;
-        margin-bottom: 0px;
+    .stButton>button {
+        background-color: #B2AC88;
+        color: white;
+        border-radius: 25px;
+        border: none;
+        padding: 10px 20px;
+        font-weight: bold;
+        transition: 0.3s;
+        width: 100%;
     }
-
-    .stCameraInput > div {
-        border-radius: 35px !important;
-        overflow: hidden !important;
-        border: 8px solid white !important;
-        box-shadow: 0 15px 35px rgba(0,0,0,0.05) !important;
+    .stButton>button:hover {
+        background-color: #8F8A6B;
+        border: none;
     }
-
-    button {
-        border-radius: 50px !important;
-        text-transform: uppercase;
-        letter-spacing: 1px;
+    .profile-box {
+        padding: 20px;
+        background-color: white;
+        border-radius: 20px;
+        margin-bottom: 25px;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+        border: 1px solid #E6E6E6;
+        color: #555;
     }
-
-    .stInfo {
-        background-color: white !important;
-        border: none !important;
-        border-radius: 30px !important;
-        box-shadow: 0 10px 30px rgba(0,0,0,0.04) !important;
-        padding: 30px !important;
-        color: #5D6D7E !important;
-    }
-
-    .stMarkdown p {
-        color: #7F8C8D;
-        text-align: center;
+    .stTextInput>div>div>input, .stNumberInput>div>div>input {
+        border-radius: 15px;
     }
     </style>
-    """, unsafe_allow_html=True)
+    """, unsafe_allow_status_code=True)
 
-st.title("🌿 Cilt Asistanım")
-st.write("Stitch tasarımıyla içerik analizi")
+genai.configure(api_key="AIzaSyDEVQ2G_Rqq60ZjBk6APfoEdvc7fCL8-yA")
+model = genai.GenerativeModel('gemini-1.5-flash')
 
-GOOGLE_API_KEY = "AIzaSyDEVQ2G_Rgq6OZjBk6APfoEdvC7fCL8-yA" 
-genai.configure(api_key=GOOGLE_API_KEY)
-model = genai.GenerativeModel('gemini-pro')
+if 'user_data' not in st.session_state:
+    st.session_state.user_data = {"name": "", "age": 0, "skin_type": "", "registered": False}
 
-pytesseract.pytesseract.tesseract_cmd = r'/opt/homebrew/bin/tesseract'
-
-uploaded_file = st.camera_input("")
-
-if uploaded_file:
-    img = Image.open(uploaded_file)
-    st.image(img, use_container_width=True)
+if not st.session_state.user_data["registered"]:
+    st.title("🌿 Bella Skin")
+    st.write("Kişisel cilt asistanın için profilini oluştur.")
     
-    with st.spinner('Gemini inceliyor... ✨'):
-        try:
-            text = pytesseract.image_to_string(img)
-            prompt = f"Bir cilt bakımı uzmanı gibi davran. Şu içerik listesini analiz et: {text}. Eğer sivilce yapan veya tahriş edici maddeler varsa nazik ve soft bir dille uyar. Türkçe cevap ver."
-            response = model.generate_content(prompt)
-            st.markdown("---")
-            st.info(response.text)
-        except Exception as e:
-            st.error("Bir bağlantı sorunu oluştu.")
+    name = st.text_input("İsminiz nedir?")
+    age = st.number_input("Yaşınız?", min_value=0, max_value=100, step=1)
+    skin_type = st.selectbox("Cilt tipini biliyor musun?", 
+                            ["Seçiniz", "Yağlı", "Kuru", "Karma", "Hassas", "Bilmiyorum, analiz edelim"])
+    
+    if st.button("Kaydol ve Başla"):
+        if name and age > 0:
+            st.session_state.user_data = {
+                "name": name,
+                "age": age,
+                "skin_type": skin_type,
+                "registered": True
+            }
+            st.rerun()
+        else:
+            st.warning("Lütfen ismini ve yaşını boş bırakma.")
+
+else:
+    st.title(f"Selam, {st.session_state.user_data['name']} ✨")
+    
+    st.markdown(f"""
+    <div class="profile-box">
+        <b>Profil Bilgilerin:</b><br>
+         Yaş: {st.session_state.user_data['age']} | Cilt: {st.session_state.user_data['skin_type']}
+    </div>
+    """, unsafe_allow_status_code=True)
+
+    tab1, tab2 = st.tabs(["📸 Yüz Analizi", "🔍 Ürün Tara"])
+
+    with tab1:
+        st.write("Cilt durumunu anlamam için bir selfie çek.")
+        face_img = st.camera_input("Selfie çek", key="face_camera")
+        if face_img:
+            st.info("Analiz sistemi hazırlanıyor...")
+
+    with tab2:
+        st.write("Ürünün arkasındaki içerik listesini çek.")
+        prod_img = st.camera_input("Ürünü tara", key="prod_camera")
+        if prod_img:
+            st.info(f"{st.session_state.user_data['name']}, bu ürünü senin için inceliyorum...")
+
+    if st.button("Profili Sıfırla"):
+        st.session_state.user_data["registered"] = False
+        st.rerun()

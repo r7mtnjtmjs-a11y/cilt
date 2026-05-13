@@ -36,7 +36,7 @@ st.markdown("""
         border-radius: 15px;
     }
     </style>
-    """, unsafe_allow_status_code=True)
+    """, unsafe_allow_html=True)
 
 genai.configure(api_key="AIzaSyDEVQ2G_Rqq60ZjBk6APfoEdvc7fCL8-yA")
 model = genai.GenerativeModel('gemini-1.5-flash')
@@ -73,7 +73,7 @@ else:
         <b>Profil Bilgilerin:</b><br>
          Yaş: {st.session_state.user_data['age']} | Cilt: {st.session_state.user_data['skin_type']}
     </div>
-    """, unsafe_allow_status_code=True)
+    """, unsafe_allow_html=True)
 
     tab1, tab2 = st.tabs(["📸 Yüz Analizi", "🔍 Ürün Tara"])
 
